@@ -1,0 +1,79 @@
+@host = http://localhost:8080
+
+### 1. Login admin -> luu token
+# @name loginAdmin
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "login": "adminuser",
+  "password": "Admin@12345"
+}
+
+###
+@adminToken = {{loginAdmin.response.body.token}}
+
+### 2. Login useralpha
+# @name loginAlpha
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "login": "useralpha",
+  "password": "User@12345"
+}
+
+###
+@alphaToken = {{loginAlpha.response.body.token}}
+
+### 3. Login userbeta
+# @name loginBeta
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "login": "userbeta",
+  "password": "User@12345"
+}
+
+###
+@betaToken = {{loginBeta.response.body.token}}
+
+### 4. Sai mat khau -> 401 UNAUTHENTICATED
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "login": "adminuser",
+  "password": "wrong"
+}
+
+### 5. Body rong -> 400 VALIDATION_ERROR, fieldErrors khong rong
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{}
+
+### 6. Khong co token -> 401 qua CustomAuthenticationEntryPoint
+GET {{host}}/api/v1/orders
+
+### 7. Token rac -> 401
+GET {{host}}/api/v1/orders
+Authorization: Bearer abc.def.ghi
+
+### 8. Token hop le -> 401 bien mat (se la 404 vi chua co endpoint)
+GET {{host}}/api/v1/orders
+Authorization: Bearer {{alphaToken}}
+
+### 9. JSON hong -> 400 MALFORMED_REQUEST
+POST {{host}}/api/v1/auth/login
+Content-Type: application/json
+
+{"login": "adminuser", "password":
+
+### 10. Sai HTTP method -> 405 METHOD_NOT_ALLOWED
+GET {{host}}/api/v1/auth/login
+
+### 11. Path variable sai kieu -> se la 400 MALFORMED_REQUEST sau chunk toi
+GET {{host}}/api/v1/orders/abc
+Authorization: Bearer {{alphaToken}}
