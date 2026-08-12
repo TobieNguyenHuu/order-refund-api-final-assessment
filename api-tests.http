@@ -77,3 +77,143 @@ GET {{host}}/api/v1/auth/login
 ### 11. Path variable sai kieu -> se la 400 MALFORMED_REQUEST sau chunk toi
 GET {{host}}/api/v1/orders/abc
 Authorization: Bearer {{alphaToken}}
+
+### 12. Tao product (ADMIN) -> 201
+POST {{host}}/api/v1/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Wireless Mouse",
+  "price": 250000.00,
+  "stock": 10,
+  "active": true
+}
+
+### 13. Tao product voi stock nho, de test concurrency sau
+POST {{host}}/api/v1/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Limited Keyboard",
+  "price": 1200000.00,
+  "stock": 5,
+  "active": true
+}
+
+### 14. Product inactive, de test PRODUCT_NOT_ACTIVE
+POST {{host}}/api/v1/products
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{
+  "name": "Discontinued Headset",
+  "price": 500000.00,
+  "stock": 20,
+  "active": false
+}
+
+### 15. USER tao product -> 403 ACCESS_DENIED
+POST {{host}}/api/v1/products
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "name": "Should Fail",
+  "price": 100000.00,
+  "stock": 1,
+  "active": true
+}
+
+### 16. List products (public)
+GET {{host}}/api/v1/products
+
+### 17. Tao order thanh cong -> 201
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [
+    { "productId": 1, "quantity": 2 },
+    { "productId": 2, "quantity": 1 }
+  ],
+  "shippingAddress": "123 Nguyen Hue, Quy Nhon",
+  "note": "Giao gio hanh chinh"
+}
+
+### 18. Product trung lap -> 400 DUPLICATE_PRODUCT
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [
+    { "productId": 1, "quantity": 1 },
+    { "productId": 1, "quantity": 3 }
+  ],
+  "shippingAddress": "123 Nguyen Hue, Quy Nhon"
+}
+
+### 19. Product khong ton tai -> 404 PRODUCT_NOT_FOUND
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [ { "productId": 9999, "quantity": 1 } ],
+  "shippingAddress": "123 Nguyen Hue, Quy Nhon"
+}
+
+### 20. Product inactive -> 409 PRODUCT_NOT_ACTIVE
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [ { "productId": 3, "quantity": 1 } ],
+  "shippingAddress": "123 Nguyen Hue, Quy Nhon"
+}
+
+### 21. Khong du stock -> 409 INSUFFICIENT_STOCK
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [ { "productId": 2, "quantity": 999 } ],
+  "shippingAddress": "123 Nguyen Hue, Quy Nhon"
+}
+
+### 22. Rollback toan bo: item 1 hop le, item 2 het hang -> stock product 1 KHONG giam
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [
+    { "productId": 1, "quantity": 1 },
+    { "productId": 2, "quantity": 999 }
+  ],
+  "shippingAddress": "123 Nguyen Hue, Quy Nhon"
+}
+
+### 23. Kiem tra stock sau khoi 22 - phai giong truoc do
+GET {{host}}/api/v1/products
+
+### 24. List don cua alpha
+GET {{host}}/api/v1/orders?page=0&size=10
+Authorization: Bearer {{alphaToken}}
+
+### 25. Chi tiet don cua chinh minh -> 200
+GET {{host}}/api/v1/orders/1
+Authorization: Bearer {{alphaToken}}
+
+### 26. Beta xem don cua alpha -> 404 ORDER_NOT_FOUND (khong phai 403)
+GET {{host}}/api/v1/orders/1
+Authorization: Bearer {{betaToken}}
+
+### 27. Path variable sai kieu -> 400 MALFORMED_REQUEST
+GET {{host}}/api/v1/orders/abc
+Authorization: Bearer {{alphaToken}}
