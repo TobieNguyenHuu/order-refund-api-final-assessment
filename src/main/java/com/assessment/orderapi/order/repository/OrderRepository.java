@@ -24,4 +24,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query(value = "SELECT nextval('order_code_seq')", nativeQuery = true)
     Long nextOrderCodeSequence();
+
+    @Query("SELECT o FROM Order o LEFT JOIN FETCH o.items WHERE o.id = :orderId")
+    Optional<Order> findByIdWithItems(@Param("orderId") Long orderId);
 }

@@ -217,3 +217,59 @@ Authorization: Bearer {{betaToken}}
 ### 27. Path variable sai kieu -> 400 MALFORMED_REQUEST
 GET {{host}}/api/v1/orders/abc
 Authorization: Bearer {{alphaToken}}
+
+### 28. Alpha tra tien don 1 -> 200, paymentStatus PAID
+PUT {{host}}/api/v1/orders/1/pay
+Authorization: Bearer {{alphaToken}}
+
+### 29. Tra tien lan 2 -> 409 PAYMENT_ALREADY_COMPLETED
+PUT {{host}}/api/v1/orders/1/pay
+Authorization: Bearer {{alphaToken}}
+
+### 30. Stock truoc khi huy don 1
+GET {{host}}/api/v1/products
+
+### 31. Huy don 1 (da PAID) -> 200, CANCELLED + REFUNDED + refundedAt
+PUT {{host}}/api/v1/orders/1/cancel
+Authorization: Bearer {{alphaToken}}
+
+### 32. Stock sau khi huy - phai tang lai dung so luong da dat
+GET {{host}}/api/v1/products
+
+### 33. Huy lan 2 -> 409 ORDER_CANNOT_BE_CANCELLED
+PUT {{host}}/api/v1/orders/1/cancel
+Authorization: Bearer {{alphaToken}}
+
+### 34. Stock sau khi huy lan 2 - KHONG duoc tang them
+GET {{host}}/api/v1/products
+
+### 35. Tao don moi de test admin
+POST {{host}}/api/v1/orders
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{
+  "items": [ { "productId": 1, "quantity": 1 } ],
+  "shippingAddress": "456 Tran Hung Dao, Quy Nhon"
+}
+
+### 36. Admin doi PENDING -> CONFIRMED
+PUT {{host}}/api/v1/admin/orders/2/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "status": "CONFIRMED" }
+
+### 37. Admin doi CONFIRMED -> COMPLETED -> 409 INVALID_STATUS_TRANSITION
+PUT {{host}}/api/v1/admin/orders/2/status
+Content-Type: application/json
+Authorization: Bearer {{adminToken}}
+
+{ "status": "COMPLETED" }
+
+### 38. USER goi admin API -> 403 ACCESS_DENIED
+PUT {{host}}/api/v1/admin/orders/2/status
+Content-Type: application/json
+Authorization: Bearer {{alphaToken}}
+
+{ "status": "CONFIRMED" }

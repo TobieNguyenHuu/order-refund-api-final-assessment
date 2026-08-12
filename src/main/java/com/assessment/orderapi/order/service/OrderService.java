@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
@@ -169,6 +170,118 @@ public class OrderService {
                         "Order %d does not exist".formatted(orderId)));
 
         return orderMapper.toResponse(order);
+    }
+
+    /**
+     * Cancels the caller's own order.
+     *
+     * Restocking is driven by the order's own state, not by cancelledAt, so a
+     * second cancel attempt is rejected by the status check before any stock
+     * can be returned twice.
+     */
+    @Transactional
+    public OrderResponse cancelOrder(Long userId, Long orderId) {
+        Order order = orderRepository.findByIdAndUserIdWithItems(orderId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND,
+                        "Order %d does not exist".formatted(orderId)));
+
+        if (!order.getStatus().isUserCancellable()) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED,
+                    "Order in status %s cannot be cancelled".formatted(order.getStatus()));
+        }
+
+        applyCancellation(order);
+        return orderMapper.toResponse(order);
+    }
+
+    /**
+     * Mock payment. Only the payment status changes; the order stays in
+     * whatever fulfilment status it already had, so a PENDING order can be
+     * PAID. Cancellation therefore has to handle the paid case explicitly.
+     */
+    @Transactional
+    public OrderResponse payOrder(Long userId, Long orderId) {
+        Order order = orderRepository.findByIdAndUserIdWithItems(orderId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND,
+                        "Order %d does not exist".formatted(orderId)));
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new AppException(ErrorCode.PAYMENT_ALREADY_COMPLETED,
+                    "Order %s has already been paid".formatted(order.getOrderCode()));
+        }
+        if (order.getPaymentStatus() == PaymentStatus.REFUNDED) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_PAID,
+                    "Order %s has been refunded and cannot be paid".formatted(order.getOrderCode()));
+        }
+        // Spec 7.5: only a PENDING order with UNPAID payment status is payable.
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_PAID,
+                    "Order in status %s cannot be paid".formatted(order.getStatus()));
+        }
+
+        order.setPaymentStatus(PaymentStatus.PAID);
+        log.info("Order {} marked as PAID by user {}", order.getOrderCode(), userId);
+
+        return orderMapper.toResponse(order);
+    }
+
+    /**
+     * Administrative status update. Transitions are validated against the
+     * state machine in OrderStatus; a transition to CANCELLED goes through the
+     * same restock-and-refund path as a user cancellation.
+     */
+    @Transactional
+    public OrderResponse updateOrderStatus(Long orderId, OrderStatus targetStatus) {
+        Order order = orderRepository.findByIdWithItems(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND,
+                        "Order %d does not exist".formatted(orderId)));
+
+        if (!order.getStatus().canTransitionTo(targetStatus)) {
+            throw new AppException(ErrorCode.INVALID_STATUS_TRANSITION,
+                    "Cannot change status from %s to %s"
+                            .formatted(order.getStatus(), targetStatus));
+        }
+
+        if (targetStatus == OrderStatus.CANCELLED) {
+            applyCancellation(order);
+        } else {
+            order.setStatus(targetStatus);
+        }
+
+        log.info("Order {} status changed to {}", order.getOrderCode(), order.getStatus());
+        return orderMapper.toResponse(order);
+    }
+
+    /**
+     * Single cancellation path shared by the user and admin endpoints: restore
+     * stock, mark the order cancelled, and refund it if it had been paid.
+     * Product rows are re-locked here for the same reason as on creation.
+     */
+    private void applyCancellation(Order order) {
+        List<Long> productIds = order.getItems().stream()
+                .map(OrderItem::getProductId)
+                .sorted()
+                .toList();
+
+        Map<Long, Product> productById = productRepository.findAllByIdsForUpdate(productIds)
+                .stream()
+                .collect(Collectors.toMap(Product::getId, Function.identity()));
+
+        for (OrderItem item : order.getItems()) {
+            Product product = productById.get(item.getProductId());
+            if (product != null) {
+                product.setStock(product.getStock() + item.getQuantity());
+            }
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelledAt(LocalDateTime.now());
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            order.setPaymentStatus(PaymentStatus.REFUNDED);
+            order.setRefundedAt(LocalDateTime.now());
+            log.info("Order {} refunded on cancellation", order.getOrderCode());
+        }
     }
 
     private List<Long> extractDistinctProductIds(List<OrderItemRequest> items) {

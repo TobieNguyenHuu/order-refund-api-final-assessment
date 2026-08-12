@@ -47,4 +47,18 @@ public class OrderController {
         Long userId = AuthUtils.getCurrentUserId();
         return ResponseEntity.ok(orderService.getMyOrderDetail(userId, orderId));
     }
+
+    @Operation(summary = "Cancel the current user's order")
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable Long orderId) {
+        Long userId = AuthUtils.getCurrentUserId();
+        return ResponseEntity.ok(orderService.cancelOrder(userId, orderId));
+    }
+
+    @Operation(summary = "Mock payment for the current user's order")
+    @PutMapping("/{orderId}/pay")
+    public ResponseEntity<OrderResponse> payOrder(@PathVariable Long orderId) {
+        Long userId = AuthUtils.getCurrentUserId();
+        return ResponseEntity.ok(orderService.payOrder(userId, orderId));
+    }
 }
