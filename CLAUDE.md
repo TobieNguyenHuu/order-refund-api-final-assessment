@@ -49,3 +49,8 @@ Success responses are returned bare, NOT wrapped in an ApiResponse envelope.
 - Testcontainers 2.x dropped the self-generic signature. Declare containers as
   `PostgreSQLContainer` with no type parameters — `PostgreSQLContainer<?>` and
   `new PostgreSQLContainer<>(...)` are 1.x-era syntax and will not compile.
+- Boot 4 relocated test autoconfigure annotations under module-specific
+  packages. @AutoConfigureMockMvc is now
+  org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc,
+  not ...boot.test.autoconfigure.web.servlet. Provided transitively by
+  spring-boot-starter-webmvc-test; no extra dependency needed.
