@@ -71,7 +71,7 @@ public class OrderService {
         // Step 2 + 3: lock the product rows. The repository query orders by id,
         // so every transaction acquires locks in the same sequence and two
         // concurrent orders can never each hold a lock the other is waiting for.
-        List<Product> lockedProducts = productRepository.findAllByIdsForUpdate(productIds);
+        List<Product> lockedProducts = productRepository.findAllByIdForUpdate(productIds);
 
         Map<Long, Product> productById = lockedProducts.stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
@@ -263,7 +263,7 @@ public class OrderService {
                 .sorted()
                 .toList();
 
-        Map<Long, Product> productById = productRepository.findAllByIdsForUpdate(productIds)
+        Map<Long, Product> productById = productRepository.findAllByIdForUpdate(productIds)
                 .stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
 

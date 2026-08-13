@@ -6,23 +6,35 @@
 
 ---
 
-## 1. Transaction Design
+## 1. Completed Requirements
+
+_To be completed._
+
+## 2. Partially Completed Requirements
+
+_To be completed._
+
+## 3. Unfinished Requirements
+
+_To be completed._
+
+## 4. Transaction Design
 
 _To be completed after the order service is implemented._
 
-## 2. Locking Design
+## 5. Locking Design
 
 _To be completed after the order service is implemented._
 
-## 3. Refund Behaviour
+## 6. Refund Behaviour
 
 _To be completed after the cancel and refund flows are implemented._
 
-## 4. Test Summary
+## 7. Test Summary
 
 _To be completed after the automated tests are written._
 
-## 5. Known Issues and Deviations
+## 8. Known Issues and Deviations
 
 ### Authentication layer reused from RSCRM
 
@@ -85,6 +97,6 @@ back without any other adjustment.
 
 ---
 
-## 6. How to Run
+## 9. How to Run
 
 _To be completed._

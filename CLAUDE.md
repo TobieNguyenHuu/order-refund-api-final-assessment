@@ -46,3 +46,6 @@ Success responses are returned bare, NOT wrapped in an ApiResponse envelope.
   service occupies 5432 on the dev machine, and Docker's port bind does not
   reliably fail — connections silently reach the wrong server. docker-compose
   maps 5433:5432 and DB_URL points at 5433.
+- Testcontainers 2.x dropped the self-generic signature. Declare containers as
+  `PostgreSQLContainer` with no type parameters — `PostgreSQLContainer<?>` and
+  `new PostgreSQLContainer<>(...)` are 1.x-era syntax and will not compile.
