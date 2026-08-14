@@ -290,4 +290,4 @@ Swagger UI is at `http://localhost:8080/swagger-ui`. Seeded accounts:
 
 ## 10. Demo Video
 
-[link Google Drive]
+https://fptsoftware362-my.sharepoint.com/:f:/g/personal/duynhn3_fpt_com/IgAhuNV3kzC7RZlwIsMN0n3HAUIJNoz_KPJtBKVMJ-Jgmfs?e=hm03Ap
